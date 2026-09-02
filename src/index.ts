@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { existsSync, lstatSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, relative, resolve, sep } from "node:path";
 
 type CliOptions = {
@@ -11,6 +11,7 @@ type CliOptions = {
   output?: string;
   json: boolean;
   includeTests: boolean;
+  ignore: string[];
   maxFileChars: number;
 };
 
@@ -98,6 +99,7 @@ export function parseArgs(argv: string[]): CliOptions {
     focus: [],
     json: false,
     includeTests: false,
+    ignore: [],
     maxFileChars: 2400
   };
 
@@ -144,6 +146,12 @@ export function parseArgs(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg === "--ignore" && next) {
+      options.ignore.push(...next.split(",").map((item) => item.trim()).filter(Boolean));
+      index += 1;
+      continue;
+    }
+
     if (arg === "--max-file-chars" && next) {
       options.maxFileChars = Number.parseInt(next, 10);
       index += 1;
@@ -162,7 +170,9 @@ export function parseArgs(argv: string[]): CliOptions {
 
 export function createBrief(options: CliOptions): RepoBrief {
   const root = resolve(options.root);
+  const ignorePatterns = [...readContextScoutIgnore(root), ...options.ignore];
   const files = listFiles(root)
+    .filter((file) => !matchesIgnore(relative(root, file), ignorePatterns))
     .filter((file) => isUsefulTextFile(file, options.includeTests))
     .map((path) => scoreFile(root, path, options.focus))
     .sort((left, right) => right.score - left.score || left.path.localeCompare(right.path));
@@ -253,6 +263,46 @@ function listFiles(root: string): string[] {
   }
 
   return walk(root);
+}
+
+function readContextScoutIgnore(root: string): string[] {
+  const path = join(root, ".contextscoutignore");
+  if (!existsSync(path)) {
+    return [];
+  }
+
+  return readFileSync(path, "utf8")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith("#"));
+}
+
+export function matchesIgnore(path: string, patterns: string[]): boolean {
+  const normalizedPath = path.replaceAll("\\", "/");
+
+  return patterns.some((pattern) => {
+    const normalizedPattern = pattern.replaceAll("\\", "/").replace(/^\/+/, "");
+
+    if (normalizedPattern.endsWith("/")) {
+      return normalizedPath.startsWith(normalizedPattern) || normalizedPath.includes(`/${normalizedPattern}`);
+    }
+
+    if (normalizedPattern.includes("*")) {
+      const regex = new RegExp(`^${normalizedPattern.split("*").map(escapeRegex).join(".*")}$`);
+      return regex.test(normalizedPath) || regex.test(basename(normalizedPath));
+    }
+
+    return (
+      normalizedPath === normalizedPattern ||
+      basename(normalizedPath) === normalizedPattern ||
+      normalizedPath.startsWith(`${normalizedPattern}/`) ||
+      normalizedPath.includes(`/${normalizedPattern}/`)
+    );
+  });
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function walk(dir: string): string[] {
@@ -488,6 +538,7 @@ Options:
   -o, --output <file>       Write output to a file.
       --json                Emit JSON instead of Markdown.
       --include-tests       Include tests in ranked context.
+      --ignore <patterns>   Comma-separated ignore patterns.
       --max-file-chars <n>  Max excerpt characters per file. Defaults to 2400.
   -h, --help                Show help.
 `);

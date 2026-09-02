@@ -1,6 +1,6 @@
 {
   "name": "context-scout-ai",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Generate compact, ranked repo briefs for AI coding agents.",
   "author": "Subhan Ahmed <https://github.com/subhanA-UA>",
   "license": "MIT",

@@ -45,7 +45,25 @@ Options:
 - `--output`, `-o`: write output to a file
 - `--json`: emit JSON instead of Markdown
 - `--include-tests`: include tests in ranked context
+- `--ignore`: comma-separated ignore patterns for generated, private, or noisy files
 - `--max-file-chars`: cap each file excerpt, defaults to `2400`
+
+## Ignore Noise
+
+Create a `.contextscoutignore` file when a repo has files that should never appear in an agent brief:
+
+```gitignore
+.env
+private-notes/
+*.generated.ts
+fixtures/
+```
+
+You can also pass one-off patterns from the CLI:
+
+```bash
+context-scout --path . --ignore .env,fixtures/,*.snap --output CONTEXT.md
+```
 
 ## Example Output
 
@@ -77,8 +95,8 @@ Why included: `core source`, `focus:auth`
 
 ## Roadmap
 
+- [x] `.contextscoutignore`
 - [ ] Git diff mode for PR review briefs
-- [ ] `.contextscoutignore`
 - [ ] Mermaid architecture map
 - [ ] Repo health scoring
 - [ ] MCP server mode
@@ -86,4 +104,3 @@ Why included: `core source`, `focus:auth`
 ## License
 
 MIT
-

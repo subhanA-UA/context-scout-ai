@@ -8,8 +8,9 @@
 
 ## v0.2
 
+- [x] `.contextscoutignore`
+- [x] `--ignore` CLI patterns
 - [ ] Git diff mode for PR review briefs
-- [ ] `.contextscoutignore`
 - [ ] Mermaid architecture map
 
 ## Later
@@ -17,4 +18,3 @@
 - [ ] MCP server mode
 - [ ] Web UI for drag-and-drop repo summaries
 - [ ] Repo health scoring
-
