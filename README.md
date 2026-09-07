@@ -2,11 +2,27 @@
 
 Generate compact, ranked repo briefs for AI coding agents.
 
+[![CI](https://github.com/subhanA-UA/context-scout-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/subhanA-UA/context-scout-ai/actions/workflows/ci.yml)
+[![GitHub stars](https://img.shields.io/github/stars/subhanA-UA/context-scout-ai?style=social)](https://github.com/subhanA-UA/context-scout-ai/stargazers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 Built by [Subhan Ahmed](https://github.com/subhanA-UA).
 
 Context Scout AI scans a codebase, ranks the files that matter, and emits a clean Markdown or JSON brief you can paste into Codex, Claude Code, Cursor, Gemini CLI, or any other coding agent.
 
 Part of [AI Devtools Lab](https://subhana-ua.github.io/ai-devtools-lab/), a public hub for small AI developer tools that save real engineering time.
+
+If this saves you prompt tokens or setup time, [star the repo](https://github.com/subhanA-UA/context-scout-ai/stargazers) so more developers can find it.
+
+## Use It In 60 Seconds
+
+```bash
+git clone https://github.com/subhanA-UA/context-scout-ai.git
+cd context-scout-ai
+npm install
+npm run build
+node dist/index.js --path . --diff main --output REVIEW_CONTEXT.md
+```
 
 ## Why This Exists
 
