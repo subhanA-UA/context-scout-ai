@@ -9,6 +9,7 @@ type CliOptions = {
   budget: number;
   focus: string[];
   output?: string;
+  diffBase?: string;
   json: boolean;
   includeTests: boolean;
   ignore: string[];
@@ -36,6 +37,7 @@ type RepoBrief = {
     languages: Record<string, number>;
   };
   commands: string[];
+  changedFiles: string[];
   files: FileBrief[];
 };
 
@@ -136,6 +138,12 @@ export function parseArgs(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg === "--diff" && next) {
+      options.diffBase = next;
+      index += 1;
+      continue;
+    }
+
     if (arg === "--json") {
       options.json = true;
       continue;
@@ -171,10 +179,12 @@ export function parseArgs(argv: string[]): CliOptions {
 export function createBrief(options: CliOptions): RepoBrief {
   const root = resolve(options.root);
   const ignorePatterns = [...readContextScoutIgnore(root), ...options.ignore];
+  const changedFiles = options.diffBase ? detectChangedFiles(root, options.diffBase) : [];
+  const changedSet = new Set(changedFiles);
   const files = listFiles(root)
     .filter((file) => !matchesIgnore(relative(root, file), ignorePatterns))
     .filter((file) => isUsefulTextFile(file, options.includeTests))
-    .map((path) => scoreFile(root, path, options.focus))
+    .map((path) => scoreFile(root, path, options.focus, changedSet))
     .sort((left, right) => right.score - left.score || left.path.localeCompare(right.path));
 
   const selected = selectWithinBudget(files, options.budget, options.maxFileChars);
@@ -192,6 +202,7 @@ export function createBrief(options: CliOptions): RepoBrief {
       languages: countLanguages(files)
     },
     commands: detectCommands(root),
+    changedFiles,
     files: selected
   };
 }
@@ -199,6 +210,10 @@ export function createBrief(options: CliOptions): RepoBrief {
 export function renderMarkdown(brief: RepoBrief): string {
   const focus = brief.focus.length > 0 ? brief.focus.join(", ") : "general repo understanding";
   const commands = brief.commands.length > 0 ? brief.commands.map((command) => `- \`${command}\``).join("\n") : "- No common commands detected.";
+  const changedFiles =
+    brief.changedFiles.length > 0
+      ? brief.changedFiles.map((path) => `- \`${path}\``).join("\n")
+      : "- No diff base provided, or no changed files detected.";
   const languages = Object.entries(brief.summary.languages)
     .sort((left, right) => right[1] - left[1])
     .slice(0, 8)
@@ -220,6 +235,10 @@ Estimated tokens: ${brief.estimatedTokens} / ${brief.budget}
 ## Detected Commands
 
 ${commands}
+
+## Changed Files
+
+${changedFiles}
 
 ## Language Mix
 
@@ -344,12 +363,37 @@ function isUsefulTextFile(path: string, includeTests: boolean): boolean {
   return TEXT_EXTENSIONS.has(extension) || IMPORTANT_NAMES.has(name);
 }
 
-function scoreFile(root: string, path: string, focus: string[]): FileBrief {
+function detectChangedFiles(root: string, base: string): string[] {
+  try {
+    const output = execFileSync("git", ["-C", root, "diff", "--name-only", `${base}...HEAD`], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"]
+    });
+    return output.split("\n").map((line) => line.trim()).filter(Boolean);
+  } catch {
+    try {
+      const output = execFileSync("git", ["-C", root, "diff", "--name-only", base], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"]
+      });
+      return output.split("\n").map((line) => line.trim()).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+}
+
+function scoreFile(root: string, path: string, focus: string[], changedFiles: Set<string>): FileBrief {
   const rel = relative(root, path);
   const lower = rel.toLowerCase();
   const stats = statSync(path);
   const reasons: string[] = [];
   let score = 0;
+
+  if (changedFiles.has(rel)) {
+    score += 45;
+    reasons.push("changed file");
+  }
 
   if (IMPORTANT_NAMES.has(basename(lower))) {
     score += 50;
@@ -530,12 +574,14 @@ Generate compact, ranked repository briefs for AI coding agents.
 
 Usage:
   context-scout --path . --budget 8000 --focus auth,api --output CONTEXT.md
+  context-scout --path . --diff main --output REVIEW_CONTEXT.md
 
 Options:
   -p, --path <dir>          Repository path. Defaults to current directory.
   -b, --budget <tokens>     Approximate output token budget. Defaults to 8000.
   -f, --focus <terms>       Comma-separated focus terms for ranking.
   -o, --output <file>       Write output to a file.
+      --diff <base>         Boost files changed since a git base branch or ref.
       --json                Emit JSON instead of Markdown.
       --include-tests       Include tests in ranked context.
       --ignore <patterns>   Comma-separated ignore patterns.

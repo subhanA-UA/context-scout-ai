@@ -6,11 +6,12 @@ import test from "node:test";
 import { createBrief, matchesIgnore, parseArgs, renderMarkdown } from "../dist/index.js";
 
 test("parseArgs reads core options", () => {
-  const options = parseArgs(["--path", "/tmp/project", "--budget", "4000", "--focus", "auth,api", "--json"]);
+  const options = parseArgs(["--path", "/tmp/project", "--budget", "4000", "--focus", "auth,api", "--diff", "main", "--json"]);
 
   assert.equal(options.root, "/tmp/project");
   assert.equal(options.budget, 4000);
   assert.deepEqual(options.focus, ["auth", "api"]);
+  assert.equal(options.diffBase, "main");
   assert.equal(options.json, true);
 });
 
@@ -32,6 +33,7 @@ test("createBrief ranks focused source files", () => {
   });
 
   assert.equal(brief.summary.selectedFiles > 0, true);
+  assert.deepEqual(brief.changedFiles, []);
   assert.equal(brief.files.some((file) => file.path === "src/auth.ts"), true);
   assert.equal(brief.commands.includes("npm run test"), true);
 });
@@ -84,6 +86,7 @@ test("renderMarkdown includes the product sections agents need", () => {
       languages: { TypeScript: 1 }
     },
     commands: ["npm run test"],
+    changedFiles: ["src/index.ts"],
     files: [
       {
         path: "src/index.ts",
@@ -97,5 +100,6 @@ test("renderMarkdown includes the product sections agents need", () => {
 
   assert.match(markdown, /Context Scout Brief/);
   assert.match(markdown, /Detected Commands/);
+  assert.match(markdown, /Changed Files/);
   assert.match(markdown, /Ranked Context/);
 });

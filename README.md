@@ -6,6 +6,8 @@ Built by [Subhan Ahmed](https://github.com/subhanA-UA).
 
 Context Scout AI scans a codebase, ranks the files that matter, and emits a clean Markdown or JSON brief you can paste into Codex, Claude Code, Cursor, Gemini CLI, or any other coding agent.
 
+Part of [AI Devtools Lab](https://subhana-ua.github.io/ai-devtools-lab/), a public hub for small AI developer tools that save real engineering time.
+
 ## Why This Exists
 
 AI coding tools are strongest when they get the right context and weakest when they get a messy dump. Today's fastest-moving developer tools are all about agent workflows, token savings, repo memory, and better prompts. Context Scout AI focuses on the smallest useful version of that problem: give your agent a sharp repo briefing in one command.
@@ -43,6 +45,7 @@ Options:
 - `--budget`, `-b`: approximate output token budget, defaults to `8000`
 - `--focus`, `-f`: comma-separated focus terms that boost matching files
 - `--output`, `-o`: write output to a file
+- `--diff`: boost files changed since a git base branch or ref
 - `--json`: emit JSON instead of Markdown
 - `--include-tests`: include tests in ranked context
 - `--ignore`: comma-separated ignore patterns for generated, private, or noisy files
@@ -64,6 +67,16 @@ You can also pass one-off patterns from the CLI:
 ```bash
 context-scout --path . --ignore .env,fixtures/,*.snap --output CONTEXT.md
 ```
+
+## PR And Diff Briefs
+
+Use `--diff` when you want a coding agent to focus on files changed since a branch or ref:
+
+```bash
+context-scout --path . --diff main --output REVIEW_CONTEXT.md
+```
+
+Changed files get a ranking boost and appear in their own section, which makes the output better for review, debugging, and follow-up implementation prompts.
 
 ## Example Output
 
@@ -93,10 +106,14 @@ Why included: `core source`, `focus:auth`
 - Preparing a bug brief before asking for implementation help
 - Keeping prompts smaller without losing important files
 
+## Feedback
+
+Found a workflow where this should be smarter? Open a [feedback issue](https://github.com/subhanA-UA/context-scout-ai/issues/new/choose). The roadmap is shaped by real developer use, not guesswork.
+
 ## Roadmap
 
 - [x] `.contextscoutignore`
-- [ ] Git diff mode for PR review briefs
+- [x] Git diff mode for PR review briefs
 - [ ] Mermaid architecture map
 - [ ] Repo health scoring
 - [ ] MCP server mode

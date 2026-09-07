@@ -1,0 +1,23 @@
+name: Workflow feedback
+description: Tell us where Context Scout AI should be smarter.
+title: "[feedback]: "
+labels: ["feedback"]
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: What were you trying to do?
+      description: Describe the repo, coding agent, and task.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: What context did the tool miss or include incorrectly?
+    validations:
+      required: true
+  - type: input
+    id: channel
+    attributes:
+      label: Where did you find Context Scout AI?
+      placeholder: GitHub, X, Reddit, Hacker News, search, friend, etc.

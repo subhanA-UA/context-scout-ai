@@ -10,7 +10,11 @@
 
 - [x] `.contextscoutignore`
 - [x] `--ignore` CLI patterns
-- [ ] Git diff mode for PR review briefs
+
+## v0.3
+
+- [x] Git diff mode for PR review briefs
+- [x] Changed-files section in generated briefs
 - [ ] Mermaid architecture map
 
 ## Later
